@@ -1,0 +1,23 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "InvokeThisAgentAlias",
+      "Effect": "Allow",
+      "Action": [
+        "bedrock:InvokeAgent"
+      ],
+      "Resource": "arn:aws:bedrock:ap-southeast-2:184574354141:agent-alias/WXRWRBZ0Q9/GQPZDNAJQY"
+    },
+    {
+      "Sid": "ReadAgentMetadataOptional",
+      "Effect": "Allow",
+      "Action": [
+        "bedrock:GetAgent",
+        "bedrock:GetAgentAlias",
+        "bedrock:ListAgentAliases"
+      ],
+      "Resource": "*"
+    }
+  ]
+}

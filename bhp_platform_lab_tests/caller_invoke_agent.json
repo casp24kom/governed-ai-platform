@@ -1,0 +1,16 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "AllowInvokeAgentDebug",
+      "Effect": "Allow",
+      "Action": [
+        "bedrock:InvokeAgent",
+        "bedrock:GetAgent",
+        "bedrock:ListAgentAliases",
+        "bedrock:GetAgentAlias"
+      ],
+      "Resource": "*"
+    }
+  ]
+}

@@ -1,0 +1,168 @@
+name: Deploy Azure App Service Runtime
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Target environment"
+        type: choice
+        required: true
+        options: [dev, prod]
+      image_tag:
+        description: "Optional image tag override (default: git sha)"
+        required: false
+        default: ""
+      app_name:
+        description: "Optional App Service name override"
+        required: false
+        default: ""
+      resource_group:
+        description: "Optional resource group override"
+        required: false
+        default: ""
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  deploy:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    concurrency:
+      group: azure-appservice-${{ inputs.environment }}
+      cancel-in-progress: false
+
+    env:
+      AZURE_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
+      AZURE_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
+      AZURE_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+      ACR_LOGIN_SERVER: ${{ vars.ACR_LOGIN_SERVER }}
+      ACR_REPOSITORY: ${{ vars.ACR_REPOSITORY }}
+      DEFAULT_APP_NAME: ${{ vars.AZURE_APP_SERVICE_NAME }}
+      DEFAULT_RESOURCE_GROUP: ${{ vars.AZURE_APP_SERVICE_RESOURCE_GROUP }}
+      APP_ENV: ${{ vars.APP_ENV }}
+      API_AUTH_TOKEN: ${{ secrets.API_AUTH_TOKEN }}
+      DEBUG_API_TOKEN: ${{ secrets.DEBUG_API_TOKEN }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Azure login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ env.AZURE_CLIENT_ID }}
+          tenant-id: ${{ env.AZURE_TENANT_ID }}
+          subscription-id: ${{ env.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Resolve deploy inputs
+        id: resolve
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          APP_NAME="${{ inputs.app_name }}"
+          RESOURCE_GROUP="${{ inputs.resource_group }}"
+          TAG="${{ inputs.image_tag }}"
+
+          if [[ -z "$APP_NAME" ]]; then APP_NAME="$DEFAULT_APP_NAME"; fi
+          if [[ -z "$RESOURCE_GROUP" ]]; then RESOURCE_GROUP="$DEFAULT_RESOURCE_GROUP"; fi
+          if [[ -z "$TAG" ]]; then TAG="${GITHUB_SHA::12}"; fi
+
+          if [[ -z "$APP_NAME" ]]; then
+            echo "Missing App Service name. Set vars.AZURE_APP_SERVICE_NAME or workflow input app_name."
+            exit 1
+          fi
+          if [[ -z "$RESOURCE_GROUP" ]]; then
+            echo "Missing resource group. Set vars.AZURE_APP_SERVICE_RESOURCE_GROUP or workflow input resource_group."
+            exit 1
+          fi
+          if [[ -z "$ACR_LOGIN_SERVER" || -z "$ACR_REPOSITORY" ]]; then
+            echo "Missing ACR settings. Set vars.ACR_LOGIN_SERVER and vars.ACR_REPOSITORY."
+            exit 1
+          fi
+
+          IMAGE_URI="${ACR_LOGIN_SERVER}/${ACR_REPOSITORY}:${TAG}"
+          ACR_NAME="${ACR_LOGIN_SERVER%%.*}"
+
+          echo "app_name=$APP_NAME" >> "$GITHUB_OUTPUT"
+          echo "resource_group=$RESOURCE_GROUP" >> "$GITHUB_OUTPUT"
+          echo "image_uri=$IMAGE_URI" >> "$GITHUB_OUTPUT"
+          echo "acr_name=$ACR_NAME" >> "$GITHUB_OUTPUT"
+
+      - name: Setup Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: ACR login
+        shell: bash
+        run: az acr login --name "${{ steps.resolve.outputs.acr_name }}"
+
+      - name: Build and push image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          platforms: linux/amd64
+          tags: ${{ steps.resolve.outputs.image_uri }}
+
+      - name: Update App Service image and app settings
+        shell: bash
+        run: |
+          set -euo pipefail
+          APP_NAME="${{ steps.resolve.outputs.app_name }}"
+          RG="${{ steps.resolve.outputs.resource_group }}"
+          IMAGE_URI="${{ steps.resolve.outputs.image_uri }}"
+
+          az webapp config container set \
+            --name "$APP_NAME" \
+            --resource-group "$RG" \
+            --container-image-name "$IMAGE_URI" \
+            --container-registry-url "https://${ACR_LOGIN_SERVER}"
+
+          SETTINGS=("WEBSITES_PORT=8000")
+          if [[ -n "${APP_ENV:-}" ]]; then SETTINGS+=("APP_ENV=${APP_ENV}"); fi
+          if [[ -n "${API_AUTH_TOKEN:-}" ]]; then SETTINGS+=("API_AUTH_TOKEN=${API_AUTH_TOKEN}"); fi
+          if [[ -n "${DEBUG_API_TOKEN:-}" ]]; then SETTINGS+=("DEBUG_API_TOKEN=${DEBUG_API_TOKEN}"); fi
+
+          az webapp config appsettings set \
+            --name "$APP_NAME" \
+            --resource-group "$RG" \
+            --settings "${SETTINGS[@]}" >/dev/null
+
+          az webapp restart --name "$APP_NAME" --resource-group "$RG"
+
+      - name: Wait and smoke test
+        shell: bash
+        run: |
+          set -euo pipefail
+          APP_NAME="${{ steps.resolve.outputs.app_name }}"
+          RG="${{ steps.resolve.outputs.resource_group }}"
+
+          HOST="$(az webapp show --name "$APP_NAME" --resource-group "$RG" --query defaultHostName -o tsv)"
+          URL="https://${HOST}"
+
+          for i in {1..60}; do
+            if curl -fsS "$URL/health" >/dev/null; then
+              echo "Health check passed at $URL/health"
+              break
+            fi
+            sleep 10
+          done
+
+          curl -fsS "$URL/health"
+
+          if [[ -n "${API_AUTH_TOKEN:-}" ]]; then
+            curl -fsS "$URL/rag/query" \
+              -H "Authorization: Bearer ${API_AUTH_TOKEN}" \
+              -H "Content-Type: application/json" \
+              -d '{"user_id":"gha","question":"What is the isolation procedure before maintenance?","topk":3}' >/dev/null
+          fi
+
+      - name: Deployment summary
+        shell: bash
+        run: |
+          echo "App Service: ${{ steps.resolve.outputs.app_name }}"
+          echo "Resource Group: ${{ steps.resolve.outputs.resource_group }}"
+          echo "Image: ${{ steps.resolve.outputs.image_uri }}"

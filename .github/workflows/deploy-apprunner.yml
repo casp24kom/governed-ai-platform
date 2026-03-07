@@ -195,10 +195,45 @@ jobs:
           }
           JSON
 
-          aws apprunner update-service \
-            --service-arn "$SERVICE_ARN" \
-            --region "$AWS_REGION" \
-            --source-configuration file:///tmp/apprunner-source-update.json >/dev/null
+          # Avoid transient InvalidStateException when a previous operation is still finalizing.
+          for i in {1..60}; do
+            STATUS="$(aws apprunner describe-service --service-arn "$SERVICE_ARN" --region "$AWS_REGION" --query 'Service.Status' --output text)"
+            echo "[pre-update $i] status=$STATUS"
+            if [[ "$STATUS" != "OPERATION_IN_PROGRESS" ]]; then
+              break
+            fi
+            sleep 5
+          done
+
+          UPDATED=0
+          for i in {1..12}; do
+            set +e
+            UPDATE_OUT="$(aws apprunner update-service \
+              --service-arn "$SERVICE_ARN" \
+              --region "$AWS_REGION" \
+              --source-configuration file:///tmp/apprunner-source-update.json 2>&1)"
+            RC=$?
+            set -e
+
+            if [[ $RC -eq 0 ]]; then
+              UPDATED=1
+              break
+            fi
+
+            if echo "$UPDATE_OUT" | grep -q "InvalidStateException"; then
+              echo "[update retry $i] App Runner busy, retrying in 10s..."
+              sleep 10
+              continue
+            fi
+
+            echo "$UPDATE_OUT"
+            exit $RC
+          done
+
+          if [[ $UPDATED -ne 1 ]]; then
+            echo "Failed to update App Runner after retries (service kept returning InvalidStateException)."
+            exit 1
+          fi
 
           echo "service_arn=$SERVICE_ARN" >> "$GITHUB_OUTPUT"
 

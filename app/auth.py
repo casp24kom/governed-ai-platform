@@ -29,7 +29,7 @@ class ApiAuthMiddleware(BaseHTTPMiddleware):
     Security-sensitive: protects non-debug API routes using bearer token auth.
 
     Behavior:
-    - In local/dev/test-like environments, auth is optional when API_AUTH_TOKEN is unset.
+    - In local/dev/test-like environments, auth is bypassed for all non-exempt routes.
     - In non-dev environments, auth is required for non-exempt paths.
     - If API_AUTH_TOKEN is set, every non-exempt request must present matching bearer token.
     """
@@ -42,7 +42,7 @@ class ApiAuthMiddleware(BaseHTTPMiddleware):
         env = settings.app_env.strip().lower()
         configured_token = settings.api_auth_token.strip()
 
-        if env in DEV_ENVS and not configured_token:
+        if env in DEV_ENVS:
             return await call_next(request)
 
         auth_header = request.headers.get("Authorization", "").strip()

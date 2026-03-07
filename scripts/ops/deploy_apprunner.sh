@@ -89,6 +89,8 @@ import os, json
 
 keys = [
   "APP_ENV",
+  "API_AUTH_TOKEN",
+  "DEBUG_API_TOKEN",
   "KB_CHUNKS_TABLE",
   "TOPIC_TEMPLATES_TABLE",
   "SF_ACCOUNT_IDENTIFIER",

@@ -1,0 +1,210 @@
+name: Deploy App Runner
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Target environment"
+        type: choice
+        required: true
+        options: [dev, prod]
+      image_tag:
+        description: "Optional image tag override (default: git sha)"
+        required: false
+        default: ""
+      service_arn:
+        description: "Optional App Runner service ARN override"
+        required: false
+        default: ""
+      ecr_repository:
+        description: "Optional ECR repository override"
+        required: false
+        default: ""
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  deploy:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    concurrency:
+      group: apprunner-${{ inputs.environment }}
+      cancel-in-progress: false
+
+    env:
+      AWS_REGION: ${{ vars.AWS_REGION }}
+      AWS_ROLE_ARN: ${{ vars.AWS_ROLE_ARN }}
+      DEFAULT_SERVICE_ARN: ${{ vars.APP_RUNNER_SERVICE_ARN }}
+      DEFAULT_ECR_REPOSITORY: ${{ vars.ECR_REPOSITORY }}
+      APP_ENV: ${{ vars.APP_ENV }}
+      API_AUTH_TOKEN: ${{ secrets.API_AUTH_TOKEN }}
+      DEBUG_API_TOKEN: ${{ secrets.DEBUG_API_TOKEN }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ env.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Resolve deploy inputs
+        id: resolve
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          SERVICE_ARN="${{ inputs.service_arn }}"
+          REPO="${{ inputs.ecr_repository }}"
+          TAG="${{ inputs.image_tag }}"
+
+          if [[ -z "$SERVICE_ARN" ]]; then SERVICE_ARN="$DEFAULT_SERVICE_ARN"; fi
+          if [[ -z "$REPO" ]]; then REPO="$DEFAULT_ECR_REPOSITORY"; fi
+          if [[ -z "$TAG" ]]; then TAG="${GITHUB_SHA::12}"; fi
+
+          if [[ -z "$SERVICE_ARN" ]]; then
+            echo "Missing service ARN. Set vars.APP_RUNNER_SERVICE_ARN or workflow input service_arn."
+            exit 1
+          fi
+          if [[ -z "$REPO" ]]; then
+            echo "Missing ECR repository. Set vars.ECR_REPOSITORY or workflow input ecr_repository."
+            exit 1
+          fi
+
+          ACCOUNT_ID="$(aws sts get-caller-identity --query Account --output text)"
+          IMAGE_URI="${ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${REPO}:${TAG}"
+
+          echo "service_arn=$SERVICE_ARN" >> "$GITHUB_OUTPUT"
+          echo "repository=$REPO" >> "$GITHUB_OUTPUT"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "image_uri=$IMAGE_URI" >> "$GITHUB_OUTPUT"
+
+      - name: Login to ECR
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          platforms: linux/amd64,linux/arm64
+          tags: ${{ steps.resolve.outputs.image_uri }}
+
+      - name: Install jq
+        shell: bash
+        run: sudo apt-get update && sudo apt-get install -y jq
+
+      - name: Update App Runner source and runtime env
+        id: update
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          SERVICE_ARN="${{ steps.resolve.outputs.service_arn }}"
+          IMAGE_URI="${{ steps.resolve.outputs.image_uri }}"
+
+          ECR_ACCESS_ROLE_ARN="$(aws apprunner describe-service \
+            --service-arn "$SERVICE_ARN" \
+            --region "$AWS_REGION" \
+            --query 'Service.SourceConfiguration.AuthenticationConfiguration.AccessRoleArn' \
+            --output text)"
+
+          PORT="$(aws apprunner describe-service \
+            --service-arn "$SERVICE_ARN" \
+            --region "$AWS_REGION" \
+            --query 'Service.SourceConfiguration.ImageRepository.ImageConfiguration.Port' \
+            --output text)"
+
+          ENV_JSON="$(aws apprunner describe-service \
+            --service-arn "$SERVICE_ARN" \
+            --region "$AWS_REGION" \
+            --query 'Service.SourceConfiguration.ImageRepository.ImageConfiguration.RuntimeEnvironmentVariables' \
+            --output json)"
+
+          echo "$ENV_JSON" > /tmp/runtime-env.json
+
+          if [[ -n "${APP_ENV:-}" ]]; then
+            jq --arg v "$APP_ENV" '. + {"APP_ENV": $v}' /tmp/runtime-env.json > /tmp/runtime-env.next.json && mv /tmp/runtime-env.next.json /tmp/runtime-env.json
+          fi
+          if [[ -n "${API_AUTH_TOKEN:-}" ]]; then
+            jq --arg v "$API_AUTH_TOKEN" '. + {"API_AUTH_TOKEN": $v}' /tmp/runtime-env.json > /tmp/runtime-env.next.json && mv /tmp/runtime-env.next.json /tmp/runtime-env.json
+          fi
+          if [[ -n "${DEBUG_API_TOKEN:-}" ]]; then
+            jq --arg v "$DEBUG_API_TOKEN" '. + {"DEBUG_API_TOKEN": $v}' /tmp/runtime-env.json > /tmp/runtime-env.next.json && mv /tmp/runtime-env.next.json /tmp/runtime-env.json
+          fi
+
+          MERGED_ENV_JSON="$(cat /tmp/runtime-env.json)"
+
+          cat > /tmp/apprunner-source-update.json <<JSON
+          {
+            "ImageRepository": {
+              "ImageIdentifier": "$IMAGE_URI",
+              "ImageRepositoryType": "ECR",
+              "ImageConfiguration": {
+                "Port": "$PORT",
+                "RuntimeEnvironmentVariables": $MERGED_ENV_JSON
+              }
+            },
+            "AutoDeploymentsEnabled": true,
+            "AuthenticationConfiguration": { "AccessRoleArn": "$ECR_ACCESS_ROLE_ARN" }
+          }
+          JSON
+
+          aws apprunner update-service \
+            --service-arn "$SERVICE_ARN" \
+            --region "$AWS_REGION" \
+            --source-configuration file:///tmp/apprunner-source-update.json >/dev/null
+
+          echo "service_arn=$SERVICE_ARN" >> "$GITHUB_OUTPUT"
+
+      - name: Wait for RUNNING
+        shell: bash
+        run: |
+          set -euo pipefail
+          SERVICE_ARN="${{ steps.update.outputs.service_arn }}"
+
+          for i in {1..120}; do
+            STATUS="$(aws apprunner describe-service --service-arn "$SERVICE_ARN" --region "$AWS_REGION" --query 'Service.Status' --output text)"
+            echo "[$i] status=$STATUS"
+            if [[ "$STATUS" == "RUNNING" ]]; then
+              exit 0
+            fi
+            sleep 5
+          done
+
+          echo "Timed out waiting for App Runner to become RUNNING"
+          exit 1
+
+      - name: Smoke test health
+        shell: bash
+        run: |
+          set -euo pipefail
+          SERVICE_ARN="${{ steps.update.outputs.service_arn }}"
+          SERVICE_URL="$(aws apprunner describe-service --service-arn "$SERVICE_ARN" --region "$AWS_REGION" --query 'Service.ServiceUrl' --output text)"
+          curl -fsS "https://${SERVICE_URL}/health"
+
+      - name: Smoke test rag query (if API token is configured)
+        if: ${{ env.API_AUTH_TOKEN != '' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          SERVICE_ARN="${{ steps.update.outputs.service_arn }}"
+          SERVICE_URL="$(aws apprunner describe-service --service-arn "$SERVICE_ARN" --region "$AWS_REGION" --query 'Service.ServiceUrl' --output text)"
+          curl -fsS "https://${SERVICE_URL}/rag/query" \
+            -H "Authorization: Bearer ${API_AUTH_TOKEN}" \
+            -H "Content-Type: application/json" \
+            -d '{"user_id":"gha","question":"What is the isolation procedure before maintenance?","topk":3}'
+
+      - name: Deployment summary
+        shell: bash
+        run: |
+          echo "Deployed image: ${{ steps.resolve.outputs.image_uri }}"
+          echo "Service ARN: ${{ steps.resolve.outputs.service_arn }}"

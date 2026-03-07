@@ -1,7 +1,10 @@
+from typing import Any, Dict, List, Optional
+
 import requests
-from typing import Dict, Any, List, Optional
+
 from app.config import settings
 from app.snowflake_rest_auth import generate_snowflake_rest_jwt
+
 
 def cortex_search_rest(
     database: str,
@@ -33,7 +36,13 @@ def cortex_search_rest(
     if filter_obj:
         payload["filter"] = filter_obj
 
-    resp = requests.post(url, headers=headers, json=payload, timeout=timeout_s)
-    if resp.status_code >= 400:
-        raise RuntimeError(f"Cortex Search failed {resp.status_code}: {resp.text}")
-    return resp.json()
+    try:
+        response = requests.post(url, headers=headers, json=payload, timeout=timeout_s)
+        response.raise_for_status()
+    except requests.RequestException as exc:
+        detail = ""
+        if getattr(exc, "response", None) is not None:
+            detail = (exc.response.text or "")[:500]
+        raise RuntimeError(f"Cortex Search request failed: {exc}. {detail}") from exc
+
+    return response.json()

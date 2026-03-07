@@ -1,12 +1,14 @@
 import snowflake.connector
-from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives import serialization
 
 from app.config import settings, load_private_key_pem_bytes
+
 
 def _account_locator_from_url(url: str) -> str:
     host = url.replace("https://", "").split("/")[0]
     return host.split(".")[0]
+
 
 def _private_key_der() -> bytes:
     pem = load_private_key_pem_bytes()
@@ -23,8 +25,9 @@ def _private_key_der() -> bytes:
         encryption_algorithm=serialization.NoEncryption(),
     )
 
+
 def get_sf_connection():
-    # Fail fast first
+    # Critical: these values define authentication and least-privilege scope.
     if not settings.sf_user:
         raise RuntimeError("SF_USER is missing/blank")
     if not settings.sf_account_url:
@@ -39,12 +42,12 @@ def get_sf_connection():
     private_key_der = _private_key_der()
 
     return snowflake.connector.connect(
-    account=account_locator,   # ✅ use the locator derived from SF_ACCOUNT_URL
-    user=settings.sf_user,
-    private_key=private_key_der,
-    role=settings.sf_role,
-    warehouse=settings.sf_warehouse,
-    database=settings.sf_database,
-    schema=settings.sf_schema,
-    autocommit=True,
-)
+        account=account_locator,
+        user=settings.sf_user,
+        private_key=private_key_der,
+        role=settings.sf_role,
+        warehouse=settings.sf_warehouse,
+        database=settings.sf_database,
+        schema=settings.sf_schema,
+        autocommit=True,
+    )

@@ -1,0 +1,39 @@
+name: Unit Tests
+
+on:
+  pull_request:
+    paths:
+      - "app/**"
+      - "tests/**"
+      - "requirements.txt"
+      - "requirements.lock"
+      - ".github/workflows/unit-tests.yml"
+  push:
+    branches: [ main ]
+    paths:
+      - "app/**"
+      - "tests/**"
+      - "requirements.txt"
+      - "requirements.lock"
+      - ".github/workflows/unit-tests.yml"
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.lock
+
+      - name: Run unit tests
+        run: python -m unittest discover -s tests -p 'test_*.py' -v

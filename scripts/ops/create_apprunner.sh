@@ -65,6 +65,8 @@ AGENTCORE_AGENT_ID="${AGENTCORE_AGENT_ID:-}"
 # Make sure container gets PORT env var too (your Dockerfile supports it)
 PORT_ENV="$PORT"
 
+export PORT_ENV
+
 echo "Using:"
 echo "  REGION=$REGION"
 echo "  SERVICE_NAME=$SERVICE_NAME"

@@ -1,0 +1,40 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "ECRAuth",
+      "Effect": "Allow",
+      "Action": ["ecr:GetAuthorizationToken"],
+      "Resource": "*"
+    },
+    {
+      "Sid": "ECRPushPull",
+      "Effect": "Allow",
+      "Action": [
+        "ecr:BatchCheckLayerAvailability",
+        "ecr:CompleteLayerUpload",
+        "ecr:InitiateLayerUpload",
+        "ecr:PutImage",
+        "ecr:UploadLayerPart",
+        "ecr:BatchGetImage",
+        "ecr:GetDownloadUrlForLayer",
+        "ecr:DescribeRepositories",
+        "ecr:DescribeImages",
+        "ecr:ListImages"
+      ],
+      "Resource": "arn:aws:ecr:ap-southeast-2:184574354141:repository/*"
+    },
+    {
+      "Sid": "AppRunnerUpdate",
+      "Effect": "Allow",
+      "Action": [
+        "apprunner:DescribeService",
+        "apprunner:UpdateService",
+        "apprunner:ListServices",
+        "apprunner:ListOperations",
+        "apprunner:DescribeOperation"
+      ],
+      "Resource": "*"
+    }
+  ]
+}

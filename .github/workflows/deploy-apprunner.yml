@@ -42,6 +42,23 @@ jobs:
       APP_ENV: ${{ vars.APP_ENV }}
       API_AUTH_TOKEN: ${{ secrets.API_AUTH_TOKEN }}
       DEBUG_API_TOKEN: ${{ secrets.DEBUG_API_TOKEN }}
+      KB_CHUNKS_TABLE: ${{ vars.KB_CHUNKS_TABLE }}
+      TOPIC_TEMPLATES_TABLE: ${{ vars.TOPIC_TEMPLATES_TABLE }}
+      SF_ACCOUNT_IDENTIFIER: ${{ vars.SF_ACCOUNT_IDENTIFIER }}
+      SF_ACCOUNT_URL: ${{ vars.SF_ACCOUNT_URL }}
+      SF_USER: ${{ vars.SF_USER }}
+      SF_ROLE: ${{ vars.SF_ROLE }}
+      SF_WAREHOUSE: ${{ vars.SF_WAREHOUSE }}
+      SF_DATABASE: ${{ vars.SF_DATABASE }}
+      SF_SCHEMA: ${{ vars.SF_SCHEMA }}
+      SF_PUBLIC_KEY_FP: ${{ vars.SF_PUBLIC_KEY_FP }}
+      SF_PRIVATE_KEY_PEM_B64: ${{ secrets.SF_PRIVATE_KEY_PEM_B64 }}
+      SF_SECRET_NAME: ${{ vars.SF_SECRET_NAME }}
+      SF_SECRET_ID: ${{ vars.SF_SECRET_ID }}
+      AGENTCORE_REGION: ${{ vars.AGENTCORE_REGION }}
+      AGENTCORE_ENDPOINT: ${{ vars.AGENTCORE_ENDPOINT }}
+      AGENTCORE_AGENT_ID: ${{ vars.AGENTCORE_AGENT_ID }}
+      DATA_DIR: ${{ vars.DATA_DIR }}
 
     steps:
       - name: Checkout
@@ -131,15 +148,35 @@ jobs:
 
           echo "$ENV_JSON" > /tmp/runtime-env.json
 
-          if [[ -n "${APP_ENV:-}" ]]; then
-            jq --arg v "$APP_ENV" '. + {"APP_ENV": $v}' /tmp/runtime-env.json > /tmp/runtime-env.next.json && mv /tmp/runtime-env.next.json /tmp/runtime-env.json
-          fi
-          if [[ -n "${API_AUTH_TOKEN:-}" ]]; then
-            jq --arg v "$API_AUTH_TOKEN" '. + {"API_AUTH_TOKEN": $v}' /tmp/runtime-env.json > /tmp/runtime-env.next.json && mv /tmp/runtime-env.next.json /tmp/runtime-env.json
-          fi
-          if [[ -n "${DEBUG_API_TOKEN:-}" ]]; then
-            jq --arg v "$DEBUG_API_TOKEN" '. + {"DEBUG_API_TOKEN": $v}' /tmp/runtime-env.json > /tmp/runtime-env.next.json && mv /tmp/runtime-env.next.json /tmp/runtime-env.json
-          fi
+          merge_env_if_set () {
+            local key="$1"
+            local value="${2:-}"
+            if [[ -n "$value" ]]; then
+              jq --arg k "$key" --arg v "$value" '. + {($k): $v}' /tmp/runtime-env.json > /tmp/runtime-env.next.json
+              mv /tmp/runtime-env.next.json /tmp/runtime-env.json
+            fi
+          }
+
+          merge_env_if_set "APP_ENV" "${APP_ENV:-}"
+          merge_env_if_set "API_AUTH_TOKEN" "${API_AUTH_TOKEN:-}"
+          merge_env_if_set "DEBUG_API_TOKEN" "${DEBUG_API_TOKEN:-}"
+          merge_env_if_set "KB_CHUNKS_TABLE" "${KB_CHUNKS_TABLE:-}"
+          merge_env_if_set "TOPIC_TEMPLATES_TABLE" "${TOPIC_TEMPLATES_TABLE:-}"
+          merge_env_if_set "SF_ACCOUNT_IDENTIFIER" "${SF_ACCOUNT_IDENTIFIER:-}"
+          merge_env_if_set "SF_ACCOUNT_URL" "${SF_ACCOUNT_URL:-}"
+          merge_env_if_set "SF_USER" "${SF_USER:-}"
+          merge_env_if_set "SF_ROLE" "${SF_ROLE:-}"
+          merge_env_if_set "SF_WAREHOUSE" "${SF_WAREHOUSE:-}"
+          merge_env_if_set "SF_DATABASE" "${SF_DATABASE:-}"
+          merge_env_if_set "SF_SCHEMA" "${SF_SCHEMA:-}"
+          merge_env_if_set "SF_PUBLIC_KEY_FP" "${SF_PUBLIC_KEY_FP:-}"
+          merge_env_if_set "SF_PRIVATE_KEY_PEM_B64" "${SF_PRIVATE_KEY_PEM_B64:-}"
+          merge_env_if_set "SF_SECRET_NAME" "${SF_SECRET_NAME:-}"
+          merge_env_if_set "SF_SECRET_ID" "${SF_SECRET_ID:-}"
+          merge_env_if_set "AGENTCORE_REGION" "${AGENTCORE_REGION:-}"
+          merge_env_if_set "AGENTCORE_ENDPOINT" "${AGENTCORE_ENDPOINT:-}"
+          merge_env_if_set "AGENTCORE_AGENT_ID" "${AGENTCORE_AGENT_ID:-}"
+          merge_env_if_set "DATA_DIR" "${DATA_DIR:-}"
 
           MERGED_ENV_JSON="$(cat /tmp/runtime-env.json)"
 

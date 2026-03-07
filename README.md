@@ -222,7 +222,21 @@ RUN_ID="$(gh run list --workflow deploy-azure-appservice-runtime.yml --branch ma
 if [ -n "$RUN_ID" ]; then gh run cancel "$RUN_ID"; fi
 ```
 
-2. Deploy AWS (`aws.gitpushandpray.ai`)
+2. AWS config check (required for functional RAG/eval/security)
+
+```bash
+gh variable list --env dev
+gh secret list --env dev
+```
+
+Required AWS-side GitHub env config for `deploy-apprunner.yml`:
+- Vars: `AWS_REGION`, `AWS_ROLE_ARN`, `APP_RUNNER_SERVICE_ARN`, `ECR_REPOSITORY`, `APP_ENV`
+- Vars: `KB_CHUNKS_TABLE`, `TOPIC_TEMPLATES_TABLE`
+- Vars: `SF_ACCOUNT_IDENTIFIER`, `SF_ACCOUNT_URL`, `SF_USER`, `SF_ROLE`, `SF_WAREHOUSE`, `SF_DATABASE`, `SF_SCHEMA`, `SF_PUBLIC_KEY_FP`
+- Vars (optional): `SF_SECRET_NAME`, `SF_SECRET_ID`, `AGENTCORE_REGION`, `AGENTCORE_ENDPOINT`, `AGENTCORE_AGENT_ID`, `DATA_DIR`
+- Secrets: `SF_PRIVATE_KEY_PEM_B64`, `API_AUTH_TOKEN`, `DEBUG_API_TOKEN`
+
+3. Deploy AWS (`aws.gitpushandpray.ai`)
 
 ```bash
 gh workflow run deploy-apprunner.yml --ref main -f environment=dev
@@ -231,20 +245,20 @@ RUN_ID="$(gh run list --workflow deploy-apprunner.yml --branch main --limit 1 --
 gh run watch "$RUN_ID" --exit-status
 ```
 
-3. Deploy Azure App Service (`azure.gitpushandpray.ai`)
+4. Deploy Azure App Service (`azure.gitpushandpray.ai`)
 
 ```bash
 ./scripts/ops/deploy_azure_appservice_via_gh.sh dev
 ```
 
-4. Verify both public endpoints
+5. Verify both public endpoints
 
 ```bash
 curl -i https://aws.gitpushandpray.ai/health
 curl -i https://azure.gitpushandpray.ai/health
 ```
 
-5. Verify protected RAG endpoint (both surfaces)
+6. Verify protected RAG endpoint (both surfaces)
 
 ```bash
 curl -fsS https://aws.gitpushandpray.ai/rag/query \
@@ -258,7 +272,7 @@ curl -fsS https://azure.gitpushandpray.ai/rag/query \
   -d '{"user_id":"demo","question":"What is the isolation procedure before maintenance?","topk":3}'
 ```
 
-6. Rollback / recovery (Azure first)
+7. Rollback / recovery (Azure first)
 
 ```bash
 SUB="0ef3ed97-e9ee-44dd-935a-da97870fe303"
@@ -275,7 +289,7 @@ az webapp restart -g "$RG" -n "$APP"
 curl -i https://azure.gitpushandpray.ai/health
 ```
 
-7. Rollback / recovery (AWS App Runner)
+8. Rollback / recovery (AWS App Runner)
 
 ```bash
 aws apprunner start-deployment \

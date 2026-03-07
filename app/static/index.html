@@ -345,6 +345,11 @@
             <input id="userId" value="demo" />
           </div>
 
+          <div class="grow">
+            <label>API Token (Bearer)</label><br/>
+            <input id="apiToken" type="password" placeholder="paste API_AUTH_TOKEN to enable protected actions" />
+          </div>
+
           <div class="pill">
             <label style="margin:0;">Show raw JSON</label>
             <input id="raw" type="checkbox" />
@@ -495,6 +500,17 @@
   let lastAnswerText = "";
   let lastJson = null;
   let lastSecurityReport = null;
+  const TOKEN_STORAGE_KEY = "bhp_api_token";
+
+  function getApiToken(){
+    const el = document.getElementById("apiToken");
+    return (el?.value || "").trim();
+  }
+
+  function authHeaders(base = {}){
+    const token = getApiToken();
+    return token ? {...base, Authorization: `Bearer ${token}`} : base;
+  }
 
   function setSbStatus(state, text){
   const dot = document.getElementById("sbDot");
@@ -511,7 +527,7 @@ async function loadScoreboard(){
   setSbStatus("", "Scoreboard: loading…");
 
   try{
-    const r = await fetch("/metrics", {cache:"no-store"});
+    const r = await fetch("/metrics", {cache:"no-store", headers: authHeaders()});
     const text = await r.text();
     let j = null;
     try{ j = JSON.parse(text); } catch {}
@@ -606,7 +622,7 @@ async function runEvalAndRefresh(){
     // Run eval on the server (this also inserts into Snowflake)
     const r = await fetch("/eval/run", {
       method: "POST",
-      headers: {"Content-Type":"application/json"},
+      headers: authHeaders({"Content-Type":"application/json"}),
       cache: "no-store"
     });
 
@@ -645,7 +661,7 @@ async function runEvalAndRefresh(){
     const sel = document.getElementById("topicSelect");
     const examplesWrap = document.querySelector(".examples");
     try{
-      const r = await fetch("/meta/topics", {cache:"no-store"});
+      const r = await fetch("/meta/topics", {cache:"no-store", headers: authHeaders()});
       if(!r.ok) throw new Error("meta/topics not ok");
       const j = await r.json();
       TOPICS = j.topics || [];
@@ -804,7 +820,7 @@ async function runEvalAndRefresh(){
     try{
       const r = await fetch("/rag/query", {
         method:"POST",
-        headers: {"Content-Type":"application/json"},
+        headers: authHeaders({"Content-Type":"application/json"}),
         body: JSON.stringify({user_id,question: q,topk: chosenTopk,topic: topic})
       });
 
@@ -945,7 +961,7 @@ async function runEvalAndRefresh(){
     try{
       const r = await fetch("/rag/injection_test", {
         method:"POST",
-        headers: {"Content-Type":"application/json"},
+        headers: authHeaders({"Content-Type":"application/json"}),
       });
 
       const text = await r.text();
@@ -1020,6 +1036,12 @@ async function runEvalAndRefresh(){
   });
 
   // defaults
+  const tokenEl = document.getElementById("apiToken");
+  if(tokenEl){
+    tokenEl.value = localStorage.getItem(TOKEN_STORAGE_KEY) || "";
+    tokenEl.addEventListener("change", () => localStorage.setItem(TOKEN_STORAGE_KEY, tokenEl.value || ""));
+    tokenEl.addEventListener("blur", () => localStorage.setItem(TOKEN_STORAGE_KEY, tokenEl.value || ""));
+  }
   healthCheck();
   loadTopics();
   setSecurityStatus("", "Security tests: not run");

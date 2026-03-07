@@ -206,6 +206,85 @@ Workflows:
 - Deploy AWS (build → push to ECR → Terraform apply)
 - Destroy Azure / Destroy AWS (manual confirmation to prevent accidents)
 
+## Production Run Command Sheet (AWS + Azure + Rollback)
+
+Use this exact sequence after merging changes to `main`.
+
+1. Preflight (sync + stop any stuck deploys)
+
+```bash
+cd /Users/aleksypyrz/Documents/GitHub/bhp-platform-lab
+git checkout main
+git pull origin main
+
+# Optional: cancel in-progress Azure deploy run
+RUN_ID="$(gh run list --workflow deploy-azure-appservice-runtime.yml --branch main --limit 1 --json databaseId,status -q '.[] | select(.status==\"in_progress\") | .databaseId')"
+if [ -n "$RUN_ID" ]; then gh run cancel "$RUN_ID"; fi
+```
+
+2. Deploy AWS (`aws.gitpushandpray.ai`)
+
+```bash
+gh workflow run deploy-apprunner.yml --ref main -f environment=dev
+sleep 5
+RUN_ID="$(gh run list --workflow deploy-apprunner.yml --branch main --limit 1 --json databaseId -q '.[0].databaseId')"
+gh run watch "$RUN_ID" --exit-status
+```
+
+3. Deploy Azure App Service (`azure.gitpushandpray.ai`)
+
+```bash
+./scripts/ops/deploy_azure_appservice_via_gh.sh dev
+```
+
+4. Verify both public endpoints
+
+```bash
+curl -i https://aws.gitpushandpray.ai/health
+curl -i https://azure.gitpushandpray.ai/health
+```
+
+5. Verify protected RAG endpoint (both surfaces)
+
+```bash
+curl -fsS https://aws.gitpushandpray.ai/rag/query \
+  -H "Authorization: Bearer <API_AUTH_TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{"user_id":"demo","question":"What is the isolation procedure before maintenance?","topk":3}'
+
+curl -fsS https://azure.gitpushandpray.ai/rag/query \
+  -H "Authorization: Bearer <API_AUTH_TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{"user_id":"demo","question":"What is the isolation procedure before maintenance?","topk":3}'
+```
+
+6. Rollback / recovery (Azure first)
+
+```bash
+SUB="0ef3ed97-e9ee-44dd-935a-da97870fe303"
+RG="rg-bhp-platformlab-dev-aue-app"
+APP="app-bhp-platformlab-dev-aue-gitpushandpray"
+
+az account set --subscription "$SUB"
+az webapp config container delete -g "$RG" -n "$APP"
+az webapp config set -g "$RG" -n "$APP" --linux-fx-version "PYTHON|3.12"
+az webapp config set -g "$RG" -n "$APP" \
+  --startup-file "gunicorn -k uvicorn.workers.UvicornWorker app.main:app --bind 0.0.0.0:8000 --timeout 120"
+az webapp config appsettings set -g "$RG" -n "$APP" --settings WEBSITES_PORT=8000 SCM_DO_BUILD_DURING_DEPLOYMENT=true
+az webapp restart -g "$RG" -n "$APP"
+curl -i https://azure.gitpushandpray.ai/health
+```
+
+7. Rollback / recovery (AWS App Runner)
+
+```bash
+aws apprunner start-deployment \
+  --service-arn arn:aws:apprunner:ap-southeast-2:184574354141:service/bhp-platformlab-agentcore/dff966ad32e649acbdfacc1aac8c85c9 \
+  --region ap-southeast-2
+
+curl -i https://aws.gitpushandpray.ai/health
+```
+
 ## Cost controls (important)
 
 This project is designed for demo-only cloud hosting:

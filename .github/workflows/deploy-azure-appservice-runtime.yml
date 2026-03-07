@@ -115,6 +115,13 @@ jobs:
           RG="${{ steps.resolve.outputs.resource_group }}"
           IMAGE_URI="${{ steps.resolve.outputs.image_uri }}"
 
+          echo "Current App Service runtime/startup before update:"
+          az webapp config show \
+            --name "$APP_NAME" \
+            --resource-group "$RG" \
+            --query "{linuxFxVersion:linuxFxVersion,appCommandLine:appCommandLine}" \
+            -o json
+
           az webapp config container set \
             --name "$APP_NAME" \
             --resource-group "$RG" \
@@ -130,6 +137,26 @@ jobs:
             --name "$APP_NAME" \
             --resource-group "$RG" \
             --settings "${SETTINGS[@]}" >/dev/null
+
+          # Enforce a stable startup command to avoid stale "$PORT" literal configs.
+          az webapp config set \
+            --name "$APP_NAME" \
+            --resource-group "$RG" \
+            --startup-file "gunicorn -k uvicorn.workers.UvicornWorker app.main:app --bind 0.0.0.0:8000 --timeout 120" >/dev/null
+
+          echo "Runtime/startup after update:"
+          az webapp config show \
+            --name "$APP_NAME" \
+            --resource-group "$RG" \
+            --query "{linuxFxVersion:linuxFxVersion,appCommandLine:appCommandLine}" \
+            -o json
+
+          echo "Port settings after update:"
+          az webapp config appsettings list \
+            --name "$APP_NAME" \
+            --resource-group "$RG" \
+            --query "[?name=='PORT' || name=='WEBSITES_PORT']" \
+            -o table
 
           az webapp restart --name "$APP_NAME" --resource-group "$RG"
 

@@ -209,3 +209,9 @@ crash.*.log
 venv/
 __pycache__/
 *.pyc.env
+
+# Local assessment artefacts
+01_repo_tree.txt
+02_git_status.txt
+03_recent_commits.txt
+04_root_listing.txt

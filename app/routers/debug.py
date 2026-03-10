@@ -15,12 +15,13 @@ router = APIRouter(tags=["debug"], dependencies=[Depends(require_debug_access)])
 
 @router.get("/debug/dq_audit_last")
 def dq_audit_last():
+    dq_audit_table = f"{settings.sf_database}.{settings.sf_audit_schema}.DQ_GATE_RUNS"
     sql = """
     SELECT RUN_ID, TS, USER_ID, VERDICT, LATENCY_MS
-    FROM GOV_AI_PLATFORM.AUDIT.DQ_GATE_RUNS
+    FROM {table}
     ORDER BY TS DESC
     LIMIT 10
-    """
+    """.format(table=dq_audit_table)
     with get_sf_connection() as conn:
         with conn.cursor() as cur:
             cur.execute(sql)

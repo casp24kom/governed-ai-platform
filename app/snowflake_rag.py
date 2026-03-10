@@ -1,6 +1,7 @@
 import json
 import re
 from typing import Any, Dict, List, Tuple
+from app.config import settings
 from app.snowflake_conn import get_sf_connection
 from app.cortex_search_rest import cortex_search_rest
 
@@ -159,9 +160,9 @@ def cortex_search(question: str, topk: int, topic_filter: str | None = None) -> 
 
     def _run(filter_obj: Dict[str, Any]) -> List[Dict[str, Any]]:
         data = cortex_search_rest(
-            database="GOV_AI_PLATFORM",
-            schema="KB",
-            service_name="KB_SEARCH",
+            database=settings.sf_database,
+            schema=settings.sf_schema,
+            service_name=settings.cortex_search_service,
             query=question,
             limit=retrieve_k,
             columns=cols,
@@ -459,8 +460,9 @@ def audit_rag(
     """
     Store policy + chunks inside CITATIONS (VARIANT) without changing schema.
     """
+    rag_audit_table = f"{settings.sf_database}.{settings.sf_audit_schema}.RAG_QUERIES"
     sql = (
-        "INSERT INTO GOV_AI_PLATFORM.AUDIT.RAG_QUERIES "
+        f"INSERT INTO {rag_audit_table} "
         "(REQUEST_ID, TS, USER_ID, QUESTION, TOPK, CITATIONS, ANSWER, MODEL, LATENCY_MS) "
         "SELECT %s, CURRENT_TIMESTAMP(), %s, %s, %s, PARSE_JSON(%s), %s, %s, %s"
     )

@@ -2,11 +2,13 @@ import json
 import logging
 from typing import Any
 
+from app.config import settings
 from app.snowflake_conn import get_sf_connection
 
 LOGGER = logging.getLogger(__name__)
+DQ_AUDIT_TABLE = f"{settings.sf_database}.{settings.sf_audit_schema}.DQ_GATE_RUNS"
 DQ_AUDIT_INSERT_SQL = (
-    "INSERT INTO GOV_AI_PLATFORM.AUDIT.DQ_GATE_RUNS "
+    f"INSERT INTO {DQ_AUDIT_TABLE} "
     "(RUN_ID, TS, USER_ID, VERDICT, REASONS, TOOL_SIGNALS, TICKET_DRAFT, RUNBOOK_DRAFT, LATENCY_MS) "
     "SELECT ?, CURRENT_TIMESTAMP(), ?, ?, PARSE_JSON(?), PARSE_JSON(?), PARSE_JSON(?), PARSE_JSON(?), ?"
 )

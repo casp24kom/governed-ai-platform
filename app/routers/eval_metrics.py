@@ -30,11 +30,12 @@ LOGGER = logging.getLogger(__name__)
 
 @router.get("/metrics")
 def metrics() -> Dict[str, Any]:
+    eval_table = f"{settings.sf_database}.{settings.sf_audit_schema}.EVAL_RUNS"
     try:
         with get_sf_connection() as conn:
             with conn.cursor() as cur:
                 cur.execute(
-                    """
+                    f"""
                     SELECT
                       RUN_ID,
                       RUN_TS,
@@ -43,7 +44,7 @@ def metrics() -> Dict[str, Any]:
                       N_CASES,
                       METRICS,
                       EXTRA
-                    FROM GOV_AI_PLATFORM.AUDIT.EVAL_RUNS
+                    FROM {eval_table}
                     ORDER BY RUN_TS DESC
                     LIMIT 1
                     """
@@ -216,11 +217,12 @@ def eval_run() -> Dict[str, Any]:
     }
 
     try:
+        eval_table = f"{settings.sf_database}.{settings.sf_audit_schema}.EVAL_RUNS"
         with get_sf_connection() as conn:
             with conn.cursor() as cur:
                 cur.execute(
-                    """
-                    INSERT INTO GOV_AI_PLATFORM.AUDIT.EVAL_RUNS
+                    f"""
+                    INSERT INTO {eval_table}
                     (RUN_ID, RUN_TS, APP_ENV, BASE_URL, N_CASES, METRICS, EXTRA)
                     SELECT %s, %s, %s, %s, %s, PARSE_JSON(%s), PARSE_JSON(%s)
                     """,

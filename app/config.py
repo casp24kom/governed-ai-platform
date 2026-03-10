@@ -22,6 +22,21 @@ SF_SECRET_KEYS: Final[tuple[str, ...]] = (
 )
 
 
+def _split_fqn(value: str) -> tuple[str, str, str]:
+    """
+    Split OBJECT names like DB.SCHEMA.NAME.
+    Returns empty strings when parts are missing.
+    """
+    parts = [p.strip() for p in (value or "").split(".") if p.strip()]
+    if len(parts) >= 3:
+        return parts[-3], parts[-2], parts[-1]
+    if len(parts) == 2:
+        return "", parts[0], parts[1]
+    if len(parts) == 1:
+        return "", "", parts[0]
+    return "", "", ""
+
+
 def _resolve_aws_region() -> str:
     return (
         os.getenv("AWS_REGION")
@@ -74,20 +89,40 @@ hydrate_env_from_secrets_manager()
 _hydrate_from_secret_id_if_needed()
 _hydrate_from_named_secret()
 
+_DEFAULT_KB_CHUNKS_TABLE = os.getenv(
+    "KB_CHUNKS_TABLE",
+    "GOV_AI_PLATFORM.KB.SOP_CHUNKS_ENRICHED",
+)
+_DEFAULT_DB_FROM_KB, _DEFAULT_SCHEMA_FROM_KB, _ = _split_fqn(_DEFAULT_KB_CHUNKS_TABLE)
+if not _DEFAULT_DB_FROM_KB:
+    _DEFAULT_DB_FROM_KB = "GOV_AI_PLATFORM"
+if not _DEFAULT_SCHEMA_FROM_KB:
+    _DEFAULT_SCHEMA_FROM_KB = "KB"
+
+_DEFAULT_TOPIC_TEMPLATES_TABLE = os.getenv(
+    "TOPIC_TEMPLATES_TABLE",
+    f"{_DEFAULT_DB_FROM_KB}.{_DEFAULT_SCHEMA_FROM_KB}.TOPIC_TEMPLATES",
+)
+
 
 class Settings(BaseModel):
     app_env: str = os.getenv("APP_ENV", "prod-demo")
     data_dir: str = os.getenv("DATA_DIR", "/data")
-    kb_chunks_table: str = os.getenv("KB_CHUNKS_TABLE", "GOV_AI_PLATFORM.KB.SOP_CHUNKS_ENRICHED")
-    topic_templates_table: str = os.getenv("TOPIC_TEMPLATES_TABLE", "GOV_AI_PLATFORM.KB.TOPIC_TEMPLATES")
+    kb_chunks_table: str = _DEFAULT_KB_CHUNKS_TABLE
+    topic_templates_table: str = _DEFAULT_TOPIC_TEMPLATES_TABLE
     sf_private_key_pem_path: str = os.getenv("SF_PRIVATE_KEY_PEM_PATH", "")
     sf_account_identifier: str = os.getenv("SF_ACCOUNT_IDENTIFIER", "")
     sf_account_url: str = os.getenv("SF_ACCOUNT_URL", "")
     sf_user: str = os.getenv("SF_USER", "")
     sf_role: str = os.getenv("SF_ROLE", "GOV_AI_APP_ROLE")
     sf_warehouse: str = os.getenv("SF_WAREHOUSE", "GOV_AI_WH")
-    sf_database: str = os.getenv("SF_DATABASE", "GOV_AI_PLATFORM")
-    sf_schema: str = os.getenv("SF_SCHEMA", "KB")
+    sf_database: str = os.getenv("SF_DATABASE", _DEFAULT_DB_FROM_KB)
+    sf_schema: str = os.getenv("SF_SCHEMA", _DEFAULT_SCHEMA_FROM_KB)
+    sf_audit_schema: str = os.getenv("SF_AUDIT_SCHEMA", "AUDIT")
+    cortex_search_service: str = os.getenv(
+        "CORTEX_SEARCH_SERVICE",
+        os.getenv("SF_CORTEX_SEARCH_SERVICE", "KB_SEARCH"),
+    )
     sf_private_key_pem_b64: str = os.getenv("SF_PRIVATE_KEY_PEM_B64", "")
     sf_public_key_fp: str = os.getenv("SF_PUBLIC_KEY_FP", "")
     agentcore_region: str = os.getenv("AGENTCORE_REGION", DEFAULT_AWS_REGION)

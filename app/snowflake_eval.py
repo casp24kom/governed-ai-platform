@@ -3,7 +3,7 @@ from typing import Any, Dict, Optional
 from app.snowflake_conn import get_sf_connection
 from app.config import settings
 
-EVAL_TABLE = "GOV_AI_PLATFORM.AUDIT.EVAL_RUNS"
+EVAL_TABLE = f"{settings.sf_database}.{settings.sf_audit_schema}.EVAL_RUNS"
 
 def insert_eval_run(
     run_id: str,

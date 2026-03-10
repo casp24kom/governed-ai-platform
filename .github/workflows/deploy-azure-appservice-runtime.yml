@@ -43,6 +43,8 @@ jobs:
       DEFAULT_APP_NAME: ${{ vars.AZURE_APP_SERVICE_NAME }}
       DEFAULT_RESOURCE_GROUP: ${{ vars.AZURE_APP_SERVICE_RESOURCE_GROUP }}
       APP_ENV: ${{ vars.APP_ENV }}
+      CORTEX_SEARCH_SERVICE: ${{ vars.CORTEX_SEARCH_SERVICE }}
+      SF_CORTEX_SEARCH_SERVICE: ${{ vars.SF_CORTEX_SEARCH_SERVICE }}
       API_AUTH_TOKEN: ${{ secrets.API_AUTH_TOKEN }}
       DEBUG_API_TOKEN: ${{ secrets.DEBUG_API_TOKEN }}
 
@@ -130,6 +132,8 @@ jobs:
 
           SETTINGS=("WEBSITES_PORT=8000")
           if [[ -n "${APP_ENV:-}" ]]; then SETTINGS+=("APP_ENV=${APP_ENV}"); fi
+          if [[ -n "${CORTEX_SEARCH_SERVICE:-}" ]]; then SETTINGS+=("CORTEX_SEARCH_SERVICE=${CORTEX_SEARCH_SERVICE}"); fi
+          if [[ -n "${SF_CORTEX_SEARCH_SERVICE:-}" ]]; then SETTINGS+=("SF_CORTEX_SEARCH_SERVICE=${SF_CORTEX_SEARCH_SERVICE}"); fi
           if [[ -n "${API_AUTH_TOKEN:-}" ]]; then SETTINGS+=("API_AUTH_TOKEN=${API_AUTH_TOKEN}"); fi
           if [[ -n "${DEBUG_API_TOKEN:-}" ]]; then SETTINGS+=("DEBUG_API_TOKEN=${DEBUG_API_TOKEN}"); fi
 

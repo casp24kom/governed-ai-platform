@@ -497,6 +497,12 @@
   let TOPICS = [];
   let TEMPLATE_MAP = {};
   let EXAMPLES_MAP = {};
+  const FALLBACK_EXAMPLES = [
+    {topic:"isolation_loto", text:"What is the lockout tagout procedure before maintenance?"},
+    {topic:"confined_space", text:"What are the steps for confined space entry and standby requirements?"},
+    {topic:"hot_work", text:"What are the hot work permit controls and fire watch requirements?"},
+    {topic:"ppe", text:"What PPE is required for grinding and cutting tasks?"},
+  ];
   let lastAnswerText = "";
   let lastJson = null;
   let lastSecurityReport = null;
@@ -704,8 +710,17 @@ async function runEvalAndRefresh(){
           pool.push({topic: t.topic, text: ex});
         }
       }
-      if(pool.length === 0){
-        pool.push({topic:"general", text:"What is the procedure before maintenance?"});
+
+      // Keep at least the original four examples so UI does not collapse
+      // when backend topic templates are sparse or partially populated.
+      if(pool.length < 4){
+        const seen = new Set(pool.map(p => p.text));
+        for(const fallback of FALLBACK_EXAMPLES){
+          if(!seen.has(fallback.text)){
+            pool.push(fallback);
+            seen.add(fallback.text);
+          }
+        }
       }
 
       pool.slice(0, 10).forEach(p=>{

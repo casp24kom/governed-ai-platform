@@ -121,7 +121,7 @@ class Settings(BaseModel):
     sf_audit_schema: str = os.getenv("SF_AUDIT_SCHEMA", "AUDIT")
     cortex_search_service: str = os.getenv(
         "CORTEX_SEARCH_SERVICE",
-        os.getenv("SF_CORTEX_SEARCH_SERVICE", "KB_SEARCH"),
+        os.getenv("SF_CORTEX_SEARCH_SERVICE", "SOP_SEARCH"),
     )
     sf_private_key_pem_b64: str = os.getenv("SF_PRIVATE_KEY_PEM_B64", "")
     sf_public_key_fp: str = os.getenv("SF_PUBLIC_KEY_FP", "")

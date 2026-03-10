@@ -9,7 +9,7 @@
     "bedrock:InvokeModelWithResponseStream"
   ],
   "Resource": [
-    "arn:aws:bedrock:ap-southeast-2:184574354141:inference-profile/au.anthropic.claude-sonnet-4-5-20250929-v1:0",
+    "arn:aws:bedrock:ap-southeast-2:123456789012:inference-profile/au.anthropic.claude-sonnet-4-5-20250929-v1:0",
     "arn:aws:bedrock:ap-southeast-2::foundation-model/anthropic.claude-sonnet-4-5-20250929-v1:0"
   ]
 },
@@ -18,7 +18,7 @@
       "Effect":"Allow",
       "Action":[ "lambda:InvokeFunction" ],
       "Resource":[
-        "arn:aws:lambda:ap-southeast-2:184574354141:function:bhp-platformlab-agentcore-tool"
+        "arn:aws:lambda:ap-southeast-2:123456789012:function:governed-ai-platform-tool"
       ]
     }
   ]

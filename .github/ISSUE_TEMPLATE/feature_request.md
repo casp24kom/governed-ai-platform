@@ -2,10 +2,6 @@
 name: Feature request
 about: Suggest an idea or enhancement
 title: "feat: <short description>"
----
-name: Feature request
-about: Suggest an idea or enhancement
-title: "feat: <short description>"
 labels: enhancement
 assignees: ""
 ---

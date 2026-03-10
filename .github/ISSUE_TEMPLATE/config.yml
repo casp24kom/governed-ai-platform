@@ -1,5 +1,5 @@
 blank_issues_enabled: false
 contact_links:
   - name: Security vulnerabilities
-    url: https://github.com/<your-org-or-username>/<repo>/security/policy
+    url: https://github.com/your-org/governed-ai-platform/security/policy
     about: Please report security issues via the Security Policy (no public issues).

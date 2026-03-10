@@ -1,7 +1,7 @@
-# BHP Platform Lab – Deployment Test Pack
+# Governed AI Platform – Deployment Test Pack
 
 This pack gives you repeatable **smoke tests** for:
-- Azure Web App (azure.gitpushandpray.ai)
+- Azure Web App (azure.example.com)
 - Your FastAPI endpoints (/health, /debug/env, /debug/sql, /rag/query, /metrics, /eval/run, /rag/injection_test)
 - Snowflake Cortex Search validation (SQL)
 - AWS identity + Bedrock Agent invocation via **Boto3** (since AWS CLI may not expose InvokeAgent)

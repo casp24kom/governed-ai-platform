@@ -215,3 +215,18 @@ __pycache__/
 02_git_status.txt
 03_recent_commits.txt
 04_root_listing.txt
+.DS_Store
+
+# macOS
+.DS_Store
+
+# local env / logs
+.env
+*.log
+*.tmp
+
+# terraform local state
+.terraform/
+*.tfstate
+*.tfstate.*
+.vscode/

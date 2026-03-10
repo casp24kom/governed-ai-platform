@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <title>BHP Platform Lab – SOP Q&A</title>
+  <title>Governed AI Platform – SOP Q&A</title>
   <style>
     :root{
       --bg:#0b0f14; --card:#101826; --text:#e6edf3; --muted:#9fb0c0;
@@ -281,7 +281,7 @@
   <div class="wrap">
     <div class="header">
       <div>
-        <h1 class="title">BHP Platform Lab – SOP Q&A (RAG + Policy Gate)</h1>
+        <h1 class="title">Governed AI Platform – SOP Q&A (RAG + Policy Gate)</h1>
         <p class="subtitle">
           Ask a question and the service answers <b>only</b> using retrieved SOP snippets (“approved sources”).
           It will refuse if the question is not supported by retrieved SOP content.
@@ -500,7 +500,7 @@
   let lastAnswerText = "";
   let lastJson = null;
   let lastSecurityReport = null;
-  const TOKEN_STORAGE_KEY = "bhp_api_token";
+  const TOKEN_STORAGE_KEY = "gov_ai_api_token";
 
   function getApiToken(){
     const el = document.getElementById("apiToken");

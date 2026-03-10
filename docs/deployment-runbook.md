@@ -1,16 +1,42 @@
-# Deployment Runbook (AWS + Azure)
+# Deployment Runbook — Governed AI Platform
 
-This solution can run on:
-- AWS App Runner (`aws.gitpushandpray.ai`)
-- Azure endpoint (`azure.gitpushandpray.ai`) on either:
-  - Azure App Service for Containers
-  - Azure Container Apps
+This runbook covers deployment and validation across supported cloud targets.
 
-Use branch-protected flow first: PR -> checks pass -> merge to `main`.
+## Supported Deployment Targets
 
-## 1) AWS App Runner (recommended command path)
+| Target | Role | Workflow |
+|---|---|---|
+| Azure Container Apps | Primary | `deploy-azure` |
+| Azure App Service for Containers | Alternative | `deploy-appservice` |
+| AWS App Runner | Optional | `deploy-aws` |
 
-Prereqs (GitHub environment vars/secrets):
+## Deployment Model
+
+Deployments follow a consistent pattern:
+- Build and push container image to cloud registry (ACR or ECR)
+- Apply/update runtime infrastructure
+- Run smoke tests and health checks
+
+Recommended flow: PR -> checks pass -> merge to `main` -> run deployment workflow.
+
+## Prerequisites
+
+- GitHub environment variables and secrets configured per target
+- Snowflake objects aligned with defaults: `GOV_AI_PLATFORM`, `GOV_AI_APP_ROLE`, `GOV_AI_WH`, `KB_SEARCH`
+- Terraform backend storage ready for target environment
+- DNS records configured if using custom domains
+
+Set an example token variable for runbook commands:
+
+```bash
+export API_AUTH_TOKEN="demo-api-token-000000"
+```
+
+Replace with your real value in operational use.
+
+## 1) AWS App Runner
+
+Prereqs (GitHub env vars/secrets):
 - `AWS_REGION`
 - `AWS_ROLE_ARN`
 - `APP_RUNNER_SERVICE_ARN`
@@ -22,26 +48,26 @@ Prereqs (GitHub environment vars/secrets):
 Deploy:
 
 ```bash
-cd /Users/aleksypyrz/Documents/GitHub/bhp-platform-lab
-gh workflow run deploy-apprunner.yml --ref main -f environment=dev
+cd /path/to/governed-ai-platform
+gh workflow run deploy-aws --ref main -f environment=dev
 sleep 5
-RUN_ID="$(gh run list --workflow deploy-apprunner.yml --branch main --limit 1 --json databaseId -q '.[0].databaseId')"
+RUN_ID="$(gh run list --workflow deploy-aws --branch main --limit 1 --json databaseId -q '.[0].databaseId')"
 gh run watch "$RUN_ID" --exit-status
 ```
 
 Smoke test:
 
 ```bash
-curl -fsS https://aws.gitpushandpray.ai/health
-curl -fsS https://aws.gitpushandpray.ai/rag/query \
-  -H "Authorization: Bearer <API_AUTH_TOKEN>" \
+curl -fsS https://aws.example.com/health
+curl -fsS https://aws.example.com/rag/query \
+  -H "Authorization: Bearer ${API_AUTH_TOKEN}" \
   -H "Content-Type: application/json" \
   -d '{"user_id":"demo","question":"What is the isolation procedure before maintenance?","topk":3}'
 ```
 
 ## 2) Azure App Service for Containers
 
-Prereqs (GitHub environment vars/secrets):
+Prereqs (GitHub env vars/secrets):
 - `AZURE_CLIENT_ID`
 - `AZURE_TENANT_ID`
 - `AZURE_SUBSCRIPTION_ID`
@@ -56,29 +82,29 @@ Prereqs (GitHub environment vars/secrets):
 Deploy:
 
 ```bash
-cd /Users/aleksypyrz/Documents/GitHub/bhp-platform-lab
+cd /path/to/governed-ai-platform
 ./scripts/ops/deploy_azure_appservice_via_gh.sh dev
 ```
 
 Manual equivalent:
 
 ```bash
-gh workflow run deploy-azure-appservice-runtime.yml --ref main -f environment=dev
+gh workflow run deploy-appservice --ref main -f environment=dev
 ```
 
-Smoke test (if this target backs `azure.gitpushandpray.ai`):
+Smoke test (if this target backs `azure.example.com`):
 
 ```bash
-curl -fsS https://azure.gitpushandpray.ai/health
-curl -fsS https://azure.gitpushandpray.ai/rag/query \
-  -H "Authorization: Bearer <API_AUTH_TOKEN>" \
+curl -fsS https://azure.example.com/health
+curl -fsS https://azure.example.com/rag/query \
+  -H "Authorization: Bearer ${API_AUTH_TOKEN}" \
   -H "Content-Type: application/json" \
   -d '{"user_id":"demo","question":"What is the isolation procedure before maintenance?","topk":3}'
 ```
 
 ## 3) Azure Container Apps
 
-Prereqs (GitHub environment vars/secrets):
+Prereqs (GitHub env vars/secrets):
 - `AZURE_CLIENT_ID`
 - `AZURE_TENANT_ID`
 - `AZURE_SUBSCRIPTION_ID`
@@ -93,55 +119,50 @@ Prereqs (GitHub environment vars/secrets):
 Deploy:
 
 ```bash
-cd /Users/aleksypyrz/Documents/GitHub/bhp-platform-lab
+cd /path/to/governed-ai-platform
 ./scripts/ops/deploy_azure_containerapps_via_gh.sh dev
 ```
 
 Manual equivalent:
 
 ```bash
-gh workflow run deploy-azure-containerapps-runtime.yml --ref main -f environment=dev
+gh workflow run deploy-azure --ref main -f environment=dev
 ```
 
-Smoke test (if this target backs `azure.gitpushandpray.ai`):
+Smoke test (if this target backs `azure.example.com`):
 
 ```bash
-curl -fsS https://azure.gitpushandpray.ai/health
-curl -fsS https://azure.gitpushandpray.ai/rag/query \
-  -H "Authorization: Bearer <API_AUTH_TOKEN>" \
+curl -fsS https://azure.example.com/health
+curl -fsS https://azure.example.com/rag/query \
+  -H "Authorization: Bearer ${API_AUTH_TOKEN}" \
   -H "Content-Type: application/json" \
   -d '{"user_id":"demo","question":"What is the isolation procedure before maintenance?","topk":3}'
 ```
 
-## Warm-up window (important after each deploy)
+## Warm-up Window (Important)
 
-- Expect 2-8 minutes of transient `503`/`504`/`Application Error` while containers restart and health probes pass.
-- If the workflow succeeded, poll health for a few minutes before re-triggering deployments.
+Expect 2-8 minutes of transient `503`/`504` responses after deployment while containers initialize and probes pass.
 
 ```bash
-# Poll both endpoints every 10s for up to ~10 minutes
 for i in {1..60}; do
-  echo "[$i] AWS=$(curl -s -o /dev/null -w '%{http_code}' https://aws.gitpushandpray.ai/health) AZURE=$(curl -s -o /dev/null -w '%{http_code}' https://azure.gitpushandpray.ai/health)"
+  echo "[$i] AWS=$(curl -s -o /dev/null -w '%{http_code}' https://aws.example.com/health) AZURE=$(curl -s -o /dev/null -w '%{http_code}' https://azure.example.com/health)"
   sleep 10
 done
 ```
 
 ```bash
-# Optional: one-shot readiness check with timeout
-curl --max-time 15 -i https://aws.gitpushandpray.ai/health
-curl --max-time 15 -i https://azure.gitpushandpray.ai/health
+curl --max-time 15 -i https://aws.example.com/health
+curl --max-time 15 -i https://azure.example.com/health
 ```
 
-## Full redeploy guidance
+## Full Redeploy Guidance
 
-For a full solution redeploy after app code changes:
-1. Deploy AWS App Runner (`deploy-apprunner.yml`).
-2. Deploy the active Azure runtime for `azure.gitpushandpray.ai`:
-   - App Service workflow OR Container Apps workflow.
+1. Run `deploy-aws`.
+2. Run the active Azure workflow for `azure.example.com`:
+   - `deploy-appservice` or `deploy-azure`
 3. If both Azure runtimes are active, deploy both.
 4. Re-run smoke tests on both public URLs.
 
-## Important routing check
+## Routing Check
 
-`azure.gitpushandpray.ai` should point to exactly one active Azure runtime at a time (App Service or Container Apps).
-If DNS/ingress points elsewhere, deployment can succeed but traffic may still hit old infrastructure.
+`azure.example.com` should map to exactly one active Azure runtime at a time (App Service or Container Apps). If DNS points elsewhere, deployment can succeed but traffic may still route to old infrastructure.

@@ -1,6 +1,6 @@
 import os, json, urllib.request
 
-APP_BASE = os.environ["APP_BASE"]  # e.g. https://aws.gitpushandpray.ai
+APP_BASE = os.environ["APP_BASE"]  # e.g. https://aws.example.com
 API_KEY  = os.environ.get("TOOL_API_KEY", "")
 
 def handler(event, context):

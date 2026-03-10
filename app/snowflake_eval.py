@@ -3,7 +3,7 @@ from typing import Any, Dict, Optional
 from app.snowflake_conn import get_sf_connection
 from app.config import settings
 
-EVAL_TABLE = "BHP_PLATFORM_LAB.AUDIT.EVAL_RUNS"
+EVAL_TABLE = "GOV_AI_PLATFORM.AUDIT.EVAL_RUNS"
 
 def insert_eval_run(
     run_id: str,

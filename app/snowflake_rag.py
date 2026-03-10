@@ -159,9 +159,9 @@ def cortex_search(question: str, topk: int, topic_filter: str | None = None) -> 
 
     def _run(filter_obj: Dict[str, Any]) -> List[Dict[str, Any]]:
         data = cortex_search_rest(
-            database="BHP_PLATFORM_LAB",
+            database="GOV_AI_PLATFORM",
             schema="KB",
-            service_name="SOP_SEARCH",
+            service_name="KB_SEARCH",
             query=question,
             limit=retrieve_k,
             columns=cols,
@@ -365,7 +365,7 @@ def generate_answer_in_snowflake(question: str, chunks: List[Dict[str, Any]]) ->
     min_unique_tags = min(len(allowed_tags), max(2, min_bullets // 2))
 
     prompt = (
-        "You are an operational mining SOP assistant.\n"
+        "You are an operational SOP assistant.\n"
         "Hard rules (auto-rejected if broken):\n"
         "1) Use ONLY the SOURCES below.\n"
         "2) Write ONLY '-' bullet points.\n"
@@ -460,7 +460,7 @@ def audit_rag(
     Store policy + chunks inside CITATIONS (VARIANT) without changing schema.
     """
     sql = (
-        "INSERT INTO BHP_PLATFORM_LAB.AUDIT.RAG_QUERIES "
+        "INSERT INTO GOV_AI_PLATFORM.AUDIT.RAG_QUERIES "
         "(REQUEST_ID, TS, USER_ID, QUESTION, TOPK, CITATIONS, ANSWER, MODEL, LATENCY_MS) "
         "SELECT %s, CURRENT_TIMESTAMP(), %s, %s, %s, PARSE_JSON(%s), %s, %s, %s"
     )

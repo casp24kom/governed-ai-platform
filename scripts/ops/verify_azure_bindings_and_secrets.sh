@@ -1,23 +1,49 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# ---------
-# Config (your actual names)
-# ---------
-SUBSCRIPTION_ID="0ef3ed97-e9ee-44dd-935a-da97870fe303"
+# Public-safe template script.
+# This script intentionally has no environment-specific defaults.
+# Set the required env vars before running:
+#   export SUBSCRIPTION_ID="00000000-0000-0000-0000-000000000000"
+#   export APP_RG="rg-governed-ai-platform-dev-aue-app"
+#   export APP_NAME="app-governed-ai-platform-dev-aue-app"
+#   export CUSTOM_HOST="azure.example.com"
+#   export KV_NAME="kv-governed-ai-platform-dev"
+#   export DNS_RG="rg-governed-ai-platform-dev-aue-dns"
+#   export ZONE="example.com"
+#
+# Optional:
+#   export CNAME_RECORD="azure"
+#   export TXT_RECORD="asuid.azure"
+#   export EXPECTED_CNAME_TARGET="${APP_NAME}.azurewebsites.net"
+# Replace the example values above with your own deployment values.
 
-APP_RG="rg-bhp-platformlab-dev-aue-app"
-APP_NAME="app-bhp-platformlab-dev-aue-gitpushandpray"
-CUSTOM_HOST="azure.gitpushandpray.ai"
+required_vars=(
+  "SUBSCRIPTION_ID"
+  "APP_RG"
+  "APP_NAME"
+  "CUSTOM_HOST"
+  "KV_NAME"
+  "DNS_RG"
+  "ZONE"
+)
 
-KV_NAME="kvbhpplatformlabdevaue01"
+missing=0
+for v in "${required_vars[@]}"; do
+  if [[ -z "${!v:-}" ]]; then
+    echo "❌ Missing required env var: ${v}"
+    missing=1
+  fi
+done
+if [[ "$missing" -ne 0 ]]; then
+  echo
+  echo "Set all required env vars, then re-run this script."
+  exit 1
+fi
 
-DNS_RG="rg-bhp-platformlab-dev-aue-dns"
-ZONE="gitpushandpray.ai"
-CNAME_RECORD="azure"
-TXT_RECORD="asuid.azure"
-
-EXPECTED_CNAME_TARGET="${APP_NAME}.azurewebsites.net"
+CNAME_RECORD="${CNAME_RECORD:-azure}"
+TXT_RECORD="${TXT_RECORD:-asuid.azure}"
+EXPECTED_CNAME_TARGET="${EXPECTED_CNAME_TARGET:-${APP_NAME}.azurewebsites.net}"
 
 # Secrets we expect in Key Vault
 SECRETS=(

@@ -1,7 +1,7 @@
 {
   "run_id": "eval-1771047189",
   "run_ts_unix": 1771047189,
-  "base_url": "https://azure.gitpushandpray.ai",
+  "base_url": "https://azure.example.com",
   "app_env": "prod-demo",
   "n_cases": 7,
   "metrics": {

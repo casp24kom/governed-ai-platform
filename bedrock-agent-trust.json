@@ -6,8 +6,8 @@
       "Principal":{"Service":"bedrock.amazonaws.com"},
       "Action":"sts:AssumeRole",
       "Condition":{
-        "StringEquals":{"aws:SourceAccount":"184574354141"},
-        "ArnLike":{"aws:SourceArn":"arn:aws:bedrock:ap-southeast-2:184574354141:agent/*"}
+        "StringEquals":{"aws:SourceAccount":"123456789012"},
+        "ArnLike":{"aws:SourceArn":"arn:aws:bedrock:ap-southeast-2:123456789012:agent/*"}
       }
     }
   ]

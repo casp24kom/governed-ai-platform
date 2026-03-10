@@ -1,23 +1,23 @@
--- BHP_PLATFORM_LAB – Snowflake validation checklist
+-- GOV_AI_PLATFORM – Snowflake validation checklist
 -- Run in Snowsight (as ACCOUNTADMIN or your app role)
-USE ROLE BHP_LAB_APP_ROLE;
+USE ROLE GOV_AI_APP_ROLE;
 -- 1) Confirm enriched view exists
-SHOW VIEWS LIKE 'SOP_CHUNKS_ENRICHED' IN SCHEMA BHP_PLATFORM_LAB.KB;
+SHOW VIEWS LIKE 'SOP_CHUNKS_ENRICHED' IN SCHEMA GOV_AI_PLATFORM.KB;
 
 -- 2) Confirm Cortex Search services exist (and note service name)
 SELECT *
-FROM BHP_PLATFORM_LAB.INFORMATION_SCHEMA.CORTEX_SEARCH_SERVICES
+FROM GOV_AI_PLATFORM.INFORMATION_SCHEMA.CORTEX_SEARCH_SERVICES
 WHERE SERVICE_SCHEMA = 'KB'
 ORDER BY CREATED DESC;
 
 -- 3) Quick list (alternative)
-SHOW CORTEX SEARCH SERVICES IN SCHEMA BHP_PLATFORM_LAB.KB;
+SHOW CORTEX SEARCH SERVICES IN SCHEMA GOV_AI_PLATFORM.KB;
 
 -- 4) Test a query directly against a service via SEARCH_PREVIEW
--- Replace <SERVICE_NAME> with the service you see above.
+-- Example shown with canonical service name KB_SEARCH.
 SELECT
   SNOWFLAKE.CORTEX.SEARCH_PREVIEW(
-    'BHP_PLATFORM_LAB.KB.SOP_SEARCH',
+    'GOV_AI_PLATFORM.KB.KB_SEARCH',
     '{
       "query": "lockout tagout procedure before maintenance",
       "columns": ["DOC_ID","DOC_NAME","CHUNK_ID","CHUNK_TEXT","DOC_TOPIC","DOC_RISK_TIER"],
@@ -37,7 +37,7 @@ FROM TABLE(
   FLATTEN(
     INPUT => PARSE_JSON(
       SNOWFLAKE.CORTEX.SEARCH_PREVIEW(
-        'BHP_PLATFORM_LAB.KB.SOP_SEARCH',
+        'GOV_AI_PLATFORM.KB.KB_SEARCH',
         '{
           "query": "lockout tagout procedure before maintenance",
           "columns": ["DOC_ID","DOC_NAME","CHUNK_ID","CHUNK_TEXT","DOC_TOPIC","DOC_RISK_TIER"],

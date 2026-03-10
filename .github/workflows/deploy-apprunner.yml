@@ -1,4 +1,4 @@
-name: Deploy App Runner
+name: deploy-aws
 
 on:
   workflow_dispatch:

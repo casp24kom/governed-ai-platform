@@ -225,6 +225,9 @@ __pycache__/
 *.log
 *.tmp
 
+# Accidental Finder/editor duplicate docs (e.g., "architecture 2.md")
+docs/* [0-9].md
+
 # terraform local state
 .terraform/
 *.tfstate

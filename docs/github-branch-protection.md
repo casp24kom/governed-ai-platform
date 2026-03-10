@@ -15,7 +15,7 @@ Run from repository root:
 Or explicitly:
 
 ```bash
-./scripts/ops/configure_branch_protection.sh aleksypyrz/bhp-platform-lab main
+./scripts/ops/configure_branch_protection.sh your-org/governed-ai-platform main
 ```
 
 ## What gets enforced

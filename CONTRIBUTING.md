@@ -1,6 +1,6 @@
 # Contributing
 
-Thanks for your interest in contributing! This repo is a portfolio/demo project focused on enterprise-style Data/AI platform patterns.
+Thanks for your interest in contributing. This repository is a public reference project focused on governed AI platform engineering patterns.
 
 ## Ground Rules
 
@@ -64,9 +64,9 @@ If you find a vulnerability, see `SECURITY.md`.
 
 - Branch from `main`
 - Suggested branch names:
-  - `feature/<short-name>`
-  - `fix/<short-name>`
-  - `docs/<short-name>`
+  - `feature/my-change`
+  - `fix/my-bugfix`
+  - `docs/readme-update`
 - PR title format:
   - `feat: ...`
   - `fix: ...`

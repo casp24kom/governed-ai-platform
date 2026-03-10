@@ -8,7 +8,7 @@ MODEL_ID = os.environ.get("MODEL_ID")  # inference profile ARN recommended
 AWS_PROFILE = os.environ.get("AWS_PROFILE")  # optional
 
 # Optional: assume a role explicitly for testing (useful to validate the agent role permissions)
-ASSUME_ROLE_ARN = os.environ.get("AWS_ROLE_ARN")  # e.g. arn:aws:iam::1845...:role/bhp-platformlab-bedrock-agent-role
+ASSUME_ROLE_ARN = os.environ.get("AWS_ROLE_ARN")  # e.g. arn:aws:iam::1234...:role/governed-ai-platform-bedrock-agent-role
 ASSUME_ROLE_SESSION = os.environ.get("AWS_ROLE_SESSION_NAME", "bedrock-runtime-smoke")
 
 MAX_RETRIES = int(os.environ.get("MAX_RETRIES", "6"))

@@ -1,4 +1,4 @@
-name: Deploy Azure App Service Runtime
+name: deploy-appservice
 
 on:
   workflow_dispatch:

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-DOMAIN="${DOMAIN:-gitpushandpray.ai}"
+DOMAIN="${DOMAIN:-example.com}"
 
 echo "== NS for root =="
 dig NS "$DOMAIN" +short

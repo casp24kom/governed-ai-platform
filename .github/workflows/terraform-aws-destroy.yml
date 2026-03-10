@@ -1,4 +1,4 @@
-name: Terraform - AWS (destroy)
+name: destroy-aws
 
 on:
   workflow_dispatch:

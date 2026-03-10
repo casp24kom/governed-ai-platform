@@ -3,7 +3,7 @@
   "Statement": [{
     "Effect": "Allow",
     "Principal": {
-      "Federated": "arn:aws:iam::184574354141:oidc-provider/token.actions.githubusercontent.com"
+      "Federated": "arn:aws:iam::123456789012:oidc-provider/token.actions.githubusercontent.com"
     },
     "Action": "sts:AssumeRoleWithWebIdentity",
     "Condition": {
@@ -11,7 +11,7 @@
         "token.actions.githubusercontent.com:aud": "sts.amazonaws.com"
       },
       "StringLike": {
-        "token.actions.githubusercontent.com:sub": "repo:casp24kom/bhp-platform-lab:*"
+        "token.actions.githubusercontent.com:sub": "repo:your-org/governed-ai-platform:*"
       }
     }
   }]

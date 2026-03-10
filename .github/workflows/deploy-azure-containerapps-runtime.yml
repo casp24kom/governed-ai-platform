@@ -1,4 +1,4 @@
-name: Deploy Azure Container Apps Runtime
+name: deploy-azure
 
 on:
   workflow_dispatch:

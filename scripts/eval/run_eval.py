@@ -18,7 +18,7 @@ if str(REPO_ROOT) not in sys.path:
 # -----------------------------
 # Config
 # -----------------------------
-DEFAULT_BASE_URL = os.getenv("EVAL_BASE_URL", "https://azure.gitpushandpray.ai").rstrip("/")
+DEFAULT_BASE_URL = os.getenv("EVAL_BASE_URL", "https://azure.example.com").rstrip("/")
 DEFAULT_TOPK = int(os.getenv("EVAL_TOPK", "5"))
 
 CASES_PATH = os.getenv("EVAL_CASES_PATH", "scripts/eval/eval_cases.json")
@@ -26,7 +26,7 @@ OUT_PATH = os.getenv("EVAL_OUT_PATH", "app/static/metrics_latest.json")
 
 # Snowflake write (optional but recommended)
 EVAL_WRITE_SNOWFLAKE = os.getenv("EVAL_WRITE_SNOWFLAKE", "1").strip().lower() in ("1", "true", "yes", "y")
-EVAL_TABLE_FQN = os.getenv("EVAL_TABLE_FQN", "BHP_PLATFORM_LAB.AUDIT.EVAL_RUNS")
+EVAL_TABLE_FQN = os.getenv("EVAL_TABLE_FQN", "GOV_AI_PLATFORM.AUDIT.EVAL_RUNS")
 
 # --- simple grounding validator for your current answer style ---
 CITATION_TAG_RE = re.compile(r"\[[A-Z0-9\-]+?\|.+?#chunk\d+\]")
@@ -141,7 +141,7 @@ def call_health(base_url: str) -> Dict[str, Any]:
 # -----------------------------
 def write_eval_run_to_snowflake(out: Dict[str, Any]) -> None:
     """
-    Inserts into BHP_PLATFORM_LAB.AUDIT.EVAL_RUNS:
+    Inserts into GOV_AI_PLATFORM.AUDIT.EVAL_RUNS:
       RUN_ID, APP_ENV, BASE_URL, N_CASES, METRICS (VARIANT), EXTRA (VARIANT), FAILURES (VARIANT)
 
     Requires your app env vars for Snowflake auth already set (same as app uses).

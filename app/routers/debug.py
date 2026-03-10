@@ -17,7 +17,7 @@ router = APIRouter(tags=["debug"], dependencies=[Depends(require_debug_access)])
 def dq_audit_last():
     sql = """
     SELECT RUN_ID, TS, USER_ID, VERDICT, LATENCY_MS
-    FROM BHP_PLATFORM_LAB.AUDIT.DQ_GATE_RUNS
+    FROM GOV_AI_PLATFORM.AUDIT.DQ_GATE_RUNS
     ORDER BY TS DESC
     LIMIT 10
     """

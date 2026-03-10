@@ -7,7 +7,7 @@
       "Action": [
         "bedrock:InvokeAgent"
       ],
-      "Resource": "arn:aws:bedrock:ap-southeast-2:184574354141:agent-alias/WXRWRBZ0Q9/GQPZDNAJQY"
+      "Resource": "arn:aws:bedrock:ap-southeast-2:123456789012:agent-alias/agent-abc123example/alias-abc123example"
     },
     {
       "Sid": "ReadAgentMetadataOptional",

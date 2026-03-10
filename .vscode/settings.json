@@ -1,5 +1,0 @@
-{
-  "python.defaultInterpreterPath": "/Users/aleksypyrz/Documents/GitHub/bhp-platform-lab/.venv/bin/python",
-  "python.terminal.activateEnvironment": true,
-  "python.analysis.extraPaths": ["${workspaceFolder}"]
-}

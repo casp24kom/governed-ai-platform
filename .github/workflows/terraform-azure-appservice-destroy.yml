@@ -1,4 +1,4 @@
-name: Terraform - Azure AppService (destroy)
+name: destroy-azure
 
 on:
   workflow_dispatch:

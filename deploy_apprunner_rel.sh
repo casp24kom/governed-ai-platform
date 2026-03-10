@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-export AWS_REGION="ap-southeast-2"
-export ACCOUNT_ID="184574354141"
-export REPO="bhp-platformlab-agentcore"
-export SERVICE_ARN="arn:aws:apprunner:ap-southeast-2:184574354141:service/bhp-platformlab-agentcore/89096582fc254678bd36a4b48624cb19"
+export AWS_REGION="${AWS_REGION:-ap-southeast-2}"
+export ACCOUNT_ID="${ACCOUNT_ID:-$(aws sts get-caller-identity --query Account --output text --region "$AWS_REGION")}"
+export REPO="${REPO:-governed-ai-platform}"
+export SERVICE_ARN="${SERVICE_ARN:-arn:aws:apprunner:${AWS_REGION}:${ACCOUNT_ID}:service/governed-ai-platform/svc-abc123example}"
 
 TAG="rel-$(date +%Y%m%d-%H%M%S)"
 IMAGE_URI="${ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${REPO}:${TAG}"

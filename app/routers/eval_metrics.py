@@ -43,7 +43,7 @@ def metrics() -> Dict[str, Any]:
                       N_CASES,
                       METRICS,
                       EXTRA
-                    FROM BHP_PLATFORM_LAB.AUDIT.EVAL_RUNS
+                    FROM GOV_AI_PLATFORM.AUDIT.EVAL_RUNS
                     ORDER BY RUN_TS DESC
                     LIMIT 1
                     """
@@ -220,7 +220,7 @@ def eval_run() -> Dict[str, Any]:
             with conn.cursor() as cur:
                 cur.execute(
                     """
-                    INSERT INTO BHP_PLATFORM_LAB.AUDIT.EVAL_RUNS
+                    INSERT INTO GOV_AI_PLATFORM.AUDIT.EVAL_RUNS
                     (RUN_ID, RUN_TS, APP_ENV, BASE_URL, N_CASES, METRICS, EXTRA)
                     SELECT %s, %s, %s, %s, %s, PARSE_JSON(%s), PARSE_JSON(%s)
                     """,

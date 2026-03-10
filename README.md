@@ -272,6 +272,25 @@ curl -fsS https://azure.gitpushandpray.ai/rag/query \
   -d '{"user_id":"demo","question":"What is the isolation procedure before maintenance?","topk":3}'
 ```
 
+Warm-up window (important after each deploy)
+
+- Expect 2-8 minutes of transient `503`/`504`/`Application Error` while containers restart and health probes pass.
+- Do not redeploy immediately if the workflow already succeeded; poll health first.
+
+```bash
+# Poll both endpoints every 10s for up to ~10 minutes
+for i in {1..60}; do
+  echo "[$i] AWS=$(curl -s -o /dev/null -w '%{http_code}' https://aws.gitpushandpray.ai/health) AZURE=$(curl -s -o /dev/null -w '%{http_code}' https://azure.gitpushandpray.ai/health)"
+  sleep 10
+done
+```
+
+```bash
+# Optional: one-shot readiness check with timeout
+curl --max-time 15 -i https://aws.gitpushandpray.ai/health
+curl --max-time 15 -i https://azure.gitpushandpray.ai/health
+```
+
 7. Rollback / recovery (Azure first)
 
 ```bash

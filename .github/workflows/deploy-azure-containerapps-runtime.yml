@@ -43,6 +43,18 @@ jobs:
       DEFAULT_APP_NAME: ${{ vars.AZURE_CONTAINER_APP_NAME }}
       DEFAULT_RESOURCE_GROUP: ${{ vars.AZURE_CONTAINER_APP_RESOURCE_GROUP }}
       APP_ENV: ${{ vars.APP_ENV }}
+      KB_CHUNKS_TABLE: ${{ vars.KB_CHUNKS_TABLE }}
+      TOPIC_TEMPLATES_TABLE: ${{ vars.TOPIC_TEMPLATES_TABLE }}
+      SF_ACCOUNT_IDENTIFIER: ${{ vars.SF_ACCOUNT_IDENTIFIER }}
+      SF_ACCOUNT_URL: ${{ vars.SF_ACCOUNT_URL }}
+      SF_USER: ${{ vars.SF_USER }}
+      SF_ROLE: ${{ vars.SF_ROLE }}
+      SF_WAREHOUSE: ${{ vars.SF_WAREHOUSE }}
+      SF_DATABASE: ${{ vars.SF_DATABASE }}
+      SF_SCHEMA: ${{ vars.SF_SCHEMA }}
+      SF_AUDIT_SCHEMA: ${{ vars.SF_AUDIT_SCHEMA }}
+      SF_PUBLIC_KEY_FP: ${{ vars.SF_PUBLIC_KEY_FP }}
+      SF_PRIVATE_KEY_PEM_B64: ${{ secrets.SF_PRIVATE_KEY_PEM_B64 }}
       CORTEX_SEARCH_SERVICE: ${{ vars.CORTEX_SEARCH_SERVICE }}
       SF_CORTEX_SEARCH_SERVICE: ${{ vars.SF_CORTEX_SEARCH_SERVICE }}
       API_AUTH_TOKEN: ${{ secrets.API_AUTH_TOKEN }}
@@ -123,6 +135,18 @@ jobs:
             --image "$IMAGE_URI" \
             --set-env-vars \
               APP_ENV="${APP_ENV}" \
+              KB_CHUNKS_TABLE="${KB_CHUNKS_TABLE}" \
+              TOPIC_TEMPLATES_TABLE="${TOPIC_TEMPLATES_TABLE}" \
+              SF_ACCOUNT_IDENTIFIER="${SF_ACCOUNT_IDENTIFIER}" \
+              SF_ACCOUNT_URL="${SF_ACCOUNT_URL}" \
+              SF_USER="${SF_USER}" \
+              SF_ROLE="${SF_ROLE}" \
+              SF_WAREHOUSE="${SF_WAREHOUSE}" \
+              SF_DATABASE="${SF_DATABASE}" \
+              SF_SCHEMA="${SF_SCHEMA}" \
+              SF_AUDIT_SCHEMA="${SF_AUDIT_SCHEMA}" \
+              SF_PUBLIC_KEY_FP="${SF_PUBLIC_KEY_FP}" \
+              SF_PRIVATE_KEY_PEM_B64="${SF_PRIVATE_KEY_PEM_B64}" \
               CORTEX_SEARCH_SERVICE="${CORTEX_SEARCH_SERVICE}" \
               SF_CORTEX_SEARCH_SERVICE="${SF_CORTEX_SEARCH_SERVICE}" \
               API_AUTH_TOKEN="${API_AUTH_TOKEN}" \

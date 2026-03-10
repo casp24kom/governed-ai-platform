@@ -43,6 +43,18 @@ jobs:
       DEFAULT_APP_NAME: ${{ vars.AZURE_APP_SERVICE_NAME }}
       DEFAULT_RESOURCE_GROUP: ${{ vars.AZURE_APP_SERVICE_RESOURCE_GROUP }}
       APP_ENV: ${{ vars.APP_ENV }}
+      KB_CHUNKS_TABLE: ${{ vars.KB_CHUNKS_TABLE }}
+      TOPIC_TEMPLATES_TABLE: ${{ vars.TOPIC_TEMPLATES_TABLE }}
+      SF_ACCOUNT_IDENTIFIER: ${{ vars.SF_ACCOUNT_IDENTIFIER }}
+      SF_ACCOUNT_URL: ${{ vars.SF_ACCOUNT_URL }}
+      SF_USER: ${{ vars.SF_USER }}
+      SF_ROLE: ${{ vars.SF_ROLE }}
+      SF_WAREHOUSE: ${{ vars.SF_WAREHOUSE }}
+      SF_DATABASE: ${{ vars.SF_DATABASE }}
+      SF_SCHEMA: ${{ vars.SF_SCHEMA }}
+      SF_AUDIT_SCHEMA: ${{ vars.SF_AUDIT_SCHEMA }}
+      SF_PUBLIC_KEY_FP: ${{ vars.SF_PUBLIC_KEY_FP }}
+      SF_PRIVATE_KEY_PEM_B64: ${{ secrets.SF_PRIVATE_KEY_PEM_B64 }}
       CORTEX_SEARCH_SERVICE: ${{ vars.CORTEX_SEARCH_SERVICE }}
       SF_CORTEX_SEARCH_SERVICE: ${{ vars.SF_CORTEX_SEARCH_SERVICE }}
       API_AUTH_TOKEN: ${{ secrets.API_AUTH_TOKEN }}
@@ -132,6 +144,18 @@ jobs:
 
           SETTINGS=("WEBSITES_PORT=8000")
           if [[ -n "${APP_ENV:-}" ]]; then SETTINGS+=("APP_ENV=${APP_ENV}"); fi
+          if [[ -n "${KB_CHUNKS_TABLE:-}" ]]; then SETTINGS+=("KB_CHUNKS_TABLE=${KB_CHUNKS_TABLE}"); fi
+          if [[ -n "${TOPIC_TEMPLATES_TABLE:-}" ]]; then SETTINGS+=("TOPIC_TEMPLATES_TABLE=${TOPIC_TEMPLATES_TABLE}"); fi
+          if [[ -n "${SF_ACCOUNT_IDENTIFIER:-}" ]]; then SETTINGS+=("SF_ACCOUNT_IDENTIFIER=${SF_ACCOUNT_IDENTIFIER}"); fi
+          if [[ -n "${SF_ACCOUNT_URL:-}" ]]; then SETTINGS+=("SF_ACCOUNT_URL=${SF_ACCOUNT_URL}"); fi
+          if [[ -n "${SF_USER:-}" ]]; then SETTINGS+=("SF_USER=${SF_USER}"); fi
+          if [[ -n "${SF_ROLE:-}" ]]; then SETTINGS+=("SF_ROLE=${SF_ROLE}"); fi
+          if [[ -n "${SF_WAREHOUSE:-}" ]]; then SETTINGS+=("SF_WAREHOUSE=${SF_WAREHOUSE}"); fi
+          if [[ -n "${SF_DATABASE:-}" ]]; then SETTINGS+=("SF_DATABASE=${SF_DATABASE}"); fi
+          if [[ -n "${SF_SCHEMA:-}" ]]; then SETTINGS+=("SF_SCHEMA=${SF_SCHEMA}"); fi
+          if [[ -n "${SF_AUDIT_SCHEMA:-}" ]]; then SETTINGS+=("SF_AUDIT_SCHEMA=${SF_AUDIT_SCHEMA}"); fi
+          if [[ -n "${SF_PUBLIC_KEY_FP:-}" ]]; then SETTINGS+=("SF_PUBLIC_KEY_FP=${SF_PUBLIC_KEY_FP}"); fi
+          if [[ -n "${SF_PRIVATE_KEY_PEM_B64:-}" ]]; then SETTINGS+=("SF_PRIVATE_KEY_PEM_B64=${SF_PRIVATE_KEY_PEM_B64}"); fi
           if [[ -n "${CORTEX_SEARCH_SERVICE:-}" ]]; then SETTINGS+=("CORTEX_SEARCH_SERVICE=${CORTEX_SEARCH_SERVICE}"); fi
           if [[ -n "${SF_CORTEX_SEARCH_SERVICE:-}" ]]; then SETTINGS+=("SF_CORTEX_SEARCH_SERVICE=${SF_CORTEX_SEARCH_SERVICE}"); fi
           if [[ -n "${API_AUTH_TOKEN:-}" ]]; then SETTINGS+=("API_AUTH_TOKEN=${API_AUTH_TOKEN}"); fi
